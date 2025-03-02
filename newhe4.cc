@@ -27,6 +27,7 @@
 
 int main()
 {
+    // inputs
     char mychar[64];
 
     std::cout << "Full energy of the incident lepton (MeV): " << std::flush;
@@ -59,23 +60,22 @@ int main()
     else
         E_g_cut = tempegcut * 1e-3;
 
-    std::cout << "Select Deuteron Form Factor Model (1: Abbott1, 2: Abbott2, 3: Parker, 4: SOG, 0: default): " << std::flush;
-    std::cin.getline(mychar, 64);
-    mode = atoi(mychar);
-
     std::cout << "Number of events to generate: " << std::flush;
     std::cin.getline(mychar, 64);
     int N = atoi(mychar);
 
-
+    // random number generator
     PseRan = new TRandom2();
     PseRan->SetSeed((int)(time(NULL)));
 
+    // solid angle
     omega = 2.0 * pi * (Cos(theta_min) - Cos(theta_max));
 
+    // initial states, fixed target and beam along +z
     vi_e.SetPxPyPzE(0.0, 0.0, Sqrt(Pow2(Ei_e) - m2), Ei_e);
     vi_d.SetPxPyPzE(0.0, 0.0, 0.0, M);
 
+    // read helium4 form factors
     std::fstream newfile;
     newfile.open("he4_ff.txt", std::ios::in);
     if (newfile.is_open()) {
@@ -90,7 +90,8 @@ int main()
     newfile.close();   //close the file object.
     He4_Charge_FF.SetData(he4_q2.size(), he4_q2.data(), he4_fc.data());
 
-    FILE *fp = fopen("xs.dat", "w");
+    // output file
+    FILE *fp = fopen("ehe4_events.dat", "w");
 
     for (int i = 0; i < InterpolPoints; i++) {
         theta_e = theta_min + i * (theta_max - theta_min) / (InterpolPoints - 1);

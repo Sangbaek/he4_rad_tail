@@ -55,7 +55,6 @@ const double m = 0.5109989461e-3; // GeV
 const double m2 = m * m;
 const double m4 = m2 * m2;
 const double Mp = 938.272046e-3; // GeV
-const double Md = 1875.612928e-3;
 const double MHe4 = 3728.4e-3; // GeV
 const double M = MHe4; 
 const double M2 = M * M;
@@ -101,8 +100,6 @@ double theta[InterpolPoints];
 double xs_elastic_sin[InterpolPoints];
 double xs_born_sin[InterpolPoints];
 std::vector<double> he4_q2, he4_fc;
-
-double mode;
 
 TRandom *PseRan;
 
@@ -151,185 +148,13 @@ inline double Pow6(double arg) // arg^6
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void GCGMGQ_Model1(double Q2, double &gc, double &gm, double &gq)
-{//abbott_2000_1_Model
-    double q2 = Q2*GeVtofm;
-    double gm0= 1.714;
-    double qm0 = 7.37;
-    double gq0 = 25.83;
-    double qq0 = 8.1;
-    double gc0 = 1.;
-    double qc0 = 4.21;
-    double ac[6] = {0, 6.740e-1, 2.246e-2, 9.806e-3, -2.709e-4, 3.793e-6};
-    double am[6] = {0, 5.804e-1, 8.701e-2, -3.624e-3, 3.448e-4, -2.818e-6};
-    double aq[6] = {0, 8.796e-1, -5.656e-2, 1.933e-2, -6.734e-4, 9.438e-6};
-    double  sum1 = 0.;
-    double  sum2 = 0.;
-    double  sum3 = 0.;
-    for (int n=1; n<=5; n++){
-        sum1 = sum1 + ac[n]*pow(q2,n);
-    }
-    for (int m=1; m<=5; m++){
-        sum2 = sum2 + am[m]*pow(q2,m);
-    }
-    for (int l=1; l<=5; l++){
-        sum3 = sum3 + aq[l]*pow(q2,l);
-    }
-    gc = gc0 * (1. - q2 / (qc0*qc0)) / (1. + sum1);
-    gm = gm0 * (1. - q2 / (qm0*qm0)) / (1. + sum2);
-    gq = gq0 * (1. - q2 / (qq0*qq0)) / (1. + sum3);
-} 
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void GCGMGQ_Model2(double Q2, double &gc, double &gm, double &gq)
-{//abbott_2000_2_Model
-    double gev_to_inv_fm = 5.067730758534282;
-    double q2=Q2*GeVtofm;
-    double eta = Q2 / (4. * M*M*0.000001);
-    double delta = pow((0.89852 * gev_to_inv_fm),2);
-    double gq2 = 1. / pow((1. + q2 / (4. * delta)),2);
-    double a[4] = {1.57057, 12.23792, -42.04576, 27.92014};
-    double alpha[4] = {1.52501, 8.75139, 15.97777, 23.20415};
-    double b[4] = {0.07043, 0.14443, -0.27343, 0.05856};
-    double beta[4] = {43.67795, 30.05435, 16.43075, 2.80716};
-    double c[4] = {-0.16577, 0.27557, -0.05382, -0.05598};
-    double gamma[4] = {1.87055, 14.95683, 28.04312, 41.12940};
-    double g0 = 0;
-    double sum1 = 0;
-    double sum2 = 0;
-    for (int j=0; j<=3; j++){
-       g0 = g0 + (a[j]/(alpha[j]+q2));
-    }
-    for (int k=0; k<=3; k++){
-       sum1  = sum1 + (b[k] / (beta[k] + q2));
-    }
-    Double_t g1 =sqrt(q2)*sum1;
-    for (int l=0; l<=3; l++){
-       sum2  = sum2 + (c[l] / (gamma[l] + q2));
-    }
-    double g2 =q2*sum2;
-    double C = gq2*gq2 / (2. * eta + 1.);
-    double sqrt_2_eta = sqrt(2 * eta);
-    gc = C * ((1. - 2. / 3. * eta) * g0 + 8. / 3. * sqrt_2_eta * g1 + 2. / 3. * (2. * eta - 1.) * g2);
-    gm = C * (2. * g0 + 2. * (2. * eta - 1.) / sqrt_2_eta * g1 - 2. * g2);
-    gq = C * (-1. * g0 + 2. / sqrt_2_eta * g1 - (1. + 1. / eta) * g2);
-}
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void GCGMGQ_Model3(double qq, double &gc, double &gm, double &gq)
-{//Parker's Model
-    double q2 = fabs(qq);
-    double gc0 = 1.;
-    double qc0 = 4.21;
-    double gm0 = 1.714;
-    double qm0 = 7.37;
-    double gq0 = 25.83;
-    double qq0 = 8.1;
-    double ac[5] = {0.02708986,0.54510802,0.02708986,0.02708142,0.02708986};
-    double am[5] = {0.03189419,0.03189573,0.4433256,0.03189394,0.0318955};
-    double aq[5] = {0.04249515,0.04249517,0.0013469,0.04250929,0.51344307};
-    double sum1 = 1.0;
-    double sum2 = 1.0;
-    double sum3 = 1.0;
-    for (int m=0; m<5; m++){
-        sum1 = sum1 * (1. + ac[m]*q2);
-    }
-    for (int m=0; m<5; m++){
-        sum2 = sum2 * (1. + am[m]*q2);
-    }
-    for (int m=0; m<5; m++){
-        sum3 = sum3 * (1. + aq[m]*q2);
-    }
-    gc = gc0 * (1. - fabs(qq) / (qc0*qc0))/sum1;
-    gm = gm0 * (1. - fabs(qq) / (qm0*qm0))/sum2;
-    gq = gq0 * (1. - fabs(qq) / (qq0*qq0))/sum3;
-}
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-void GCGMGQ_Model4(double qq, double &gc, double &gm, double &gq)
-{//JZ's refit of SOG
-    double q2 = fabs(qq);
-    double x = sqrt(q2);
-    double gc0 = 1.0;
-    double gm0 = 1.714;
-    double gq0 = 25.83;
-    double gamma = 0.8/Sqrt(3./2.);
-    double gamma2 = gamma*gamma;
-    double A1[12] = {0.0716166, 236.436, 1454.11, 59.1315, -1052.67, -17.7894, -8.49156, 995.005, -1323.4, -365.277, 23.5912, 0.276615};
-    double A2[12] = {-0.0792563, -17.8047, 1.01881, -22.0732, 3.33656, -147.885, 2.72721, -5.09261, 28.6759, 0.280952, 158.688,-0.792919};
-    double A3[12] = {0.358712, 3.22108, 0.445367, -9.95379, -7.35359, -247.766, 14.7679, -302.738, 548.153, 1.60897, -0.26087, 0.51755};
-    double R1[12] = {5.19665, 3.75539, 3.863, 1.56157, 1.49323, 2.83786, 2.46828, 1.4896, 3.83144, 3.91101, 2.70553, 0.4};
-    double R2[12] = {7.00828, 3.16036, 0.533948, 3.72463, 1.95537, 3.34131, 2.33181, 2.08879, 3.6881, 0.0441331, 3.31351, 0.40};
-    double R3[12] = {9.51058, 2.77812, 1.36345, 3.73107, 3.41977, 2.2224, 3.59642, 2.27404, 2.24954, 3.98724, 0.57017,0.40};
-    double sumA1 = 0;
-    double sumA2 = 0;
-    double sumA3 = 0;
-    for (int k = 0; k<11; k++){
-        sumA1 = sumA1 + A1[k];
-    }
-    for (int k = 0; k<11; k++){
-        sumA2 = sumA2 + A2[k];
-    }
-    for (int k = 0; k<11; k++){
-        sumA3 = sumA3 + A3[k];
-    }
-    A1[11] = 1. - sumA1;
-    A2[11] = 1. - sumA2;
-    A3[11] = 1. - sumA3;
-    double sum1 = 0.;
-    double sum2 = 0.;
-    double sum3 = 0.;
-    for (int k = 0; k<12; k++){
-        sum1 = sum1 + A1[k]/(1.+2.*R1[k]*R1[k]/gamma2)*(cos(x*R1[k])+(2.*R1[k]*R1[k]/gamma2)*sin(x*R1[k])/(x*R1[k]));
-    }
-    for (int k = 0; k<12; k++){
-        sum2 = sum2 + A2[k]/(1.+2.*R2[k]*R2[k]/gamma2)*(cos(x*R2[k])+(2.*R2[k]*R2[k]/gamma2)*sin(x*R2[k])/(x*R2[k]));
-    }
-    for (int k = 0; k<12; k++){
-        sum3 = sum3 + A3[k]/(1.+2.*R3[k]*R3[k]/gamma2)*(cos(x*R3[k])+(2.*R3[k]*R3[k]/gamma2)*sin(x*R3[k])/(x*R3[k]));
-    }
-    gc = gc0*Exp(-q2*gamma2/4.)*sum1;
-    gm = gm0*Exp(-q2*gamma2/4.)*sum2;
-    gq = gq0*Exp(-q2*gamma2/4.)*sum3;
-}
-
-void GetGCGMGQ(double qq, double &gc, double &gm, double &gq)
-{
-    if (mode == 0){
-        GCGMGQ_Model1(qq, gc, gm, gq);
-    }
-    if (mode == 1){
-        GCGMGQ_Model1(qq, gc, gm, gq);
-    }
-    if (mode == 2){
-        GCGMGQ_Model2(qq, gc, gm, gq);
-    }
-    if (mode == 3){
-        GCGMGQ_Model3(qq, gc, gm, gq);
-    }
-    if (mode == 4){
-        GCGMGQ_Model4(qq, gc, gm, gq);
-    }
-}
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 double A(double QQ) // Structure function A
 {
-  double q2 = QQ*GeVtofm;
-  return He4_Charge_FF.Eval(q2); 
-  /*
-  double tau = QQ/Pow2(2.*M);
-  double gc, gm, gq;
-  GetGCGMGQ(QQ, gc, gm, gq);
-  return Pow2(gc) + 8.*Pow2(tau*gq)/9. + 2.*tau*Pow2(gm)/3.;//Eq.(8)
-  */
+  return He4_Charge_FF.Eval(QQ*GeVtofm); 
 }
 double B(double QQ) // Structure function B
 {
   return 0.;
-  /*
-  double tau = QQ/Pow2(2.*M);
-  double gc, gm, gq;
-  GetGCGMGQ(QQ, gc, gm, gq);
-  return 4.*tau*(1. + tau)*Pow2(gm)/3.;//Eq.(8)
-  */
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -558,13 +383,8 @@ double sig_rad_1_dQ(double s, double q2, double v, double tau)
 
     double R = v/(1.+tau);
     double Q2tilde = q2 + R*tau;
-    double gc, gm, gq;
-    GetGCGMGQ(Q2tilde, gc, gm, gq);
-    double tau_t = Q2tilde / 4.0 / M2;
-    double A =  Pow2(gc) + 8. * Pow2(tau_t * gq)/9. + 2. * tau_t * Pow2(gm)/3.;//Eq.(8)
-    double B =  4. * tau_t * (1. + tau_t) * Pow2(gm)/3.;//Eq.(8)
-    double W1 = 2. * M2 * B;
-    double W2 = 4. * M2 * A;
+    double W1 = 2. * M2 * B(Q2tilde);
+    double W2 = 4. * M2 * A(Q2tilde);
 
     double factor1 = W1 * ( theta_11 / R + theta_12 + theta_13 * R );
     double factor2 = W2 * ( theta_21 / R + theta_22 + theta_23 * R + theta_24 * Pow2(R) );
@@ -709,13 +529,8 @@ double sig_rad_1_dtheta(double theta, double s, double q2, double v, double tau)
     double theta_23 = ((tau * (2.*tau*M2 - q2) + 4.*m2) * Fd - Sp*F1p + 2.*(1.+tau)*(tau*Sp*Fd + x*F1p + FIR - F2m))/(2.*M2) + 2.*F;
     double theta_24 = -tau * (1.+tau) * (F1p + (tau+2.)*Fd)/(2.*M2);   
 
-    double gc, gm, gq;
-    GetGCGMGQ(Q2tilde, gc, gm, gq);
-    double tau_t = Q2tilde / 4.0 / M2;
-    double A =  Pow2(gc) + 8. * Pow2(tau_t * gq)/9. + 2. * tau_t * Pow2(gm)/3.;//Eq.(8)
-    double B =  4. * tau_t * (1. + tau_t) * Pow2(gm)/3.;//Eq.(8)
-    double W1 = 2. * M2 * B;
-    double W2 = 4. * M2 * A;
+    double W1 = 2. * M2 * B(Q2tilde);
+    double W2 = 4. * M2 * A(Q2tilde);
 
     double factor1 = W1 * ( theta_11 / R + theta_12 + theta_13 * R );
     double factor2 = W2 * ( theta_21 / R + theta_22 + theta_23 * R + theta_24 * Pow2(R) );
@@ -889,12 +704,8 @@ double matrix_r(double s, double q2, double v, double tau, double phi)
     double t = q2 + r * tau;
     double tau_t = t / 4.0 / M2;
 
-    double gc, gm, gq;
-    GetGCGMGQ(t, gc, gm, gq);
-    double A =  Pow2(gc) + 8. * Pow2(tau_t * gq)/9. + 2. * tau_t * Pow2(gm)/3.;//Eq.(8)
-    double B =  4. * tau_t * (1. + tau_t) * Pow2(gm)/3.;//Eq.(8)
-    double W1 = 2. * M2 * B;
-    double W2 = 4. * M2 * A;
+    double W1 = 2. * M2 * B(t);
+    double W2 = 4. * M2 * A(t);
 
     double theta_1 = theta_11 / r + theta_12 + theta_13 * r;
     double theta_2 = theta_21 / r + theta_22 + theta_23 * r;
