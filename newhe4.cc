@@ -15,7 +15,7 @@
 #include "TFoam.h"
 #include "TRandom2.h"
 
-#include "newed.hh"
+#include "newhe4.hh"
 
 #include <cstdlib>
 #include <cstdio>
@@ -83,8 +83,8 @@ int main()
         std::istringstream in(line);
         double q2, fc;
         in >> q2 >> fc;
-	he4_q2.push_back(q2);
-	he4_fc.push_back(fc);
+        he4_q2.push_back(q2);
+        he4_fc.push_back(fc);
       }
     }
     newfile.close();   //close the file object.
