@@ -116,7 +116,6 @@ double ElasticXS_Sin_ed(double theta);
 ROOT::Math::Interpolator Interpolator_ElasticXS_Sin_ed(InterpolPoints, InterpolType);
 //ROOT::Math::Interpolator Interpolator_BornXS_Sin(InterpolPoints, InterpolType);
 ROOT::Math::Interpolator Interpolator_BornXS_Sin_ed(InterpolPoints, InterpolType);
-ROOT::Math::Interpolator He4_Charge_FF(InterpolPoints, InterpolType);
 ROOT::Math::Interpolator TPE_Feshbach(32, InterpolType);
 ROOT::Math::Interpolator TPE_Oleksandr(32, InterpolType);
 
@@ -147,15 +146,45 @@ inline double Pow6(double arg) // arg^6
     return TMath::Power(arg, 6);
 }
 
+double He4_Fc(double abst)
+{
+  /* Impulse approximation starts*/
+  const double t0 = 0.7471356; // fitting parameter for He4 charge form factor Fc
+
+  double inv_t  = 1.0 / (abst + t0);
+  double inv_t0 = 1.0 / (   0 + t0);
+
+  double denominator  = (3.24277583e+01 * pow(inv_t0, 8) - 1.64058979e+02 * pow(inv_t0, 7)  + 3.49621641e+02 * pow(inv_t0, 6)  - 3.92925094e+02 * pow(inv_t0, 5)  + 2.51960592e+02 * pow(inv_t0, 4)  - 9.50854187e+01 * pow(inv_t0, 3)  + 2.07480478e+01 * pow(inv_t0, 2)  - 2.38965558e+00 * inv_t0  + 1.09909609e-01);
+
+  double a = -3.75900846;
+  double b = -3.80165291;
+  double c = 2.9982206382026946;
+  double tfit = c;
+  double inv_tfit  = 1.0 / (tfit + t0);
+
+  double fc_tfit_numerator =  (3.24277583e+01 * pow(inv_tfit, 8) - 1.64058979e+02 * pow(inv_tfit, 7)  + 3.49621641e+02 * pow(inv_tfit, 6)  - 3.92925094e+02 * pow(inv_tfit, 5)  + 2.51960592e+02 * pow(inv_tfit, 4)  - 9.50854187e+01 * pow(inv_tfit, 3)  + 2.07480478e+01 * pow(inv_tfit, 2)  - 2.38965558e+00 * inv_tfit  + 1.09909609e-01);
+
+  double fc_tfit = fc_tfit_numerator/ denominator;
+  double d   = Exp(- a*(tfit-c)*(tfit-c) - b*(tfit-c) + Log(fc_tfit));
+
+  if (abst > c) return Exp(a*(abst-c)*(abst-c) + b*(abst-c) + Log(d));
+
+  double numerator = (3.24277583e+01 * pow(inv_t, 8) - 1.64058979e+02 * pow(inv_t, 7)  + 3.49621641e+02 * pow(inv_t, 6)  - 3.92925094e+02 * pow(inv_t, 5)  + 2.51960592e+02 * pow(inv_t, 4)  - 9.50854187e+01 * pow(inv_t, 3)  + 2.07480478e+01 * pow(inv_t, 2)  - 2.38965558e+00 * inv_t  + 1.09909609e-01);
+
+  return numerator/denominator ;
+}
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 double A(double QQ) // Structure function A
 {
-  return He4_Charge_FF.Eval(QQ*GeVtofm); 
+  return He4_Fc(QQ);
 }
+
 double B(double QQ) // Structure function B
 {
   return 0.;
 }
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 double ElasticEnergy(double theta)//GeV

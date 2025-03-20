@@ -88,7 +88,6 @@ int main()
       }
     }
     newfile.close();   //close the file object.
-    He4_Charge_FF.SetData(he4_q2.size(), he4_q2.data(), he4_fc.data());
 
     // output file
     FILE *fp = fopen("ehe4_events.dat", "w");
