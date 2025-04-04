@@ -25,44 +25,29 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-int main()
+int main(int argc, char ** argv)
 {
     // inputs
     char mychar[64];
 
-    std::cout << "Full energy of the incident lepton (MeV): " << std::flush;
-    std::cin.getline(mychar, 64);
-    Ei_e = atof(mychar) * 1e-3;
+    //std::cout << "Full energy of the incident lepton (MeV): " << std::flush;
+    //std::cin.getline(mychar, 64);
+    Ei_e = 10.604;
 
-    std::cout << "Minimum polar angle of the electron (degree): " << std::flush;
-    std::cin.getline(mychar, 64);
-    theta_min = atof(mychar) * deg;
+    //std::cout << "Minimum polar angle of the electron (degree): " << std::flush;
+    //std::cin.getline(mychar, 64);
+    //theta_min = atof(mychar) * deg;
+    theta_min = atof(argv[1])* deg;
 
-    std::cout << "Maximum polar angle of the electron (degree): " << std::flush;
-    std::cin.getline(mychar, 64);
-    theta_max = atof(mychar) * deg;
+    //std::cout << "Maximum polar angle of the electron (degree): " << std::flush;
+    //std::cin.getline(mychar, 64);
+    theta_max = atof(argv[2]) * deg;
 
-    std::cout << "Minimum energy of bremsstrahlung photons (MeV, -1 to use default value): " << std::flush;
-    std::cin.getline(mychar, 64);
-    double tempegmin = atof(mychar);
-
-    if (tempegmin <= 0)
-        E_g_min = 0.1e-3;
-    else
-        E_g_min = tempegmin * 1e-3;
-
-    std::cout << "Maximum energy of bremsstrahlung photons (MeV, -1 to use default value): " << std::flush;
-    std::cin.getline(mychar, 64);
-    double tempegcut = atof(mychar);
-
-    if (tempegcut <= 0)
-        E_g_cut = 1800.0e-3;
-    else
-        E_g_cut = tempegcut * 1e-3;
-
-    std::cout << "Number of events to generate: " << std::flush;
-    std::cin.getline(mychar, 64);
-    int N = atoi(mychar);
+    //std::cout << "Minimum energy of bremsstrahlung photons (MeV, -1 to use default value): " << std::flush;
+    //std::cin.getline(mychar, 64);
+    E_g_min = atof(argv[3]) ;
+    E_g_max = atof(argv[4]) ;
+    int N = atoi(argv[5]);
 
     // random number generator
     PseRan = new TRandom2();
@@ -75,71 +60,58 @@ int main()
     vi_e.SetPxPyPzE(0.0, 0.0, Sqrt(Pow2(Ei_e) - m2), Ei_e);
     vi_d.SetPxPyPzE(0.0, 0.0, 0.0, M);
 
-    // read helium4 form factors
-    std::fstream newfile;
-    newfile.open("he4_ff.txt", std::ios::in);
-    if (newfile.is_open()) {
-      for (std::string line; getline(newfile, line);) {
-        std::istringstream in(line);
-        double q2, fc;
-        in >> q2 >> fc;
-        he4_q2.push_back(q2);
-        he4_fc.push_back(fc);
-      }
-    }
-    newfile.close();   //close the file object.
 
-    // output file
-    FILE *fp = fopen("ehe4_events.dat", "w");
+//    // output file
+//    FILE *fp = fopen("ehe4_events.dat", "w");
 
-    for (int i = 0; i < InterpolPoints; i++) {
-        theta_e = theta_min + i * (theta_max - theta_min) / (InterpolPoints - 1);
-        theta[i] = theta_e;
-        double sinth = Sin(theta_e);
-
-        double e_elastic = ElasticEnergy(theta_e);
-        double e_ef = e_elastic - E_g_min;//maximal e_ef
-        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
-        v_min = (vi_e + vi_d - vf_e) * (vi_e + vi_d - vf_e) - M2;//maximal e_ef corresponds to minimal v
-        v_min = 0.001;//fixed for now
-
-        if (E_g_cut < e_elastic - m)
-            e_ef = e_elastic - E_g_cut;
-        else
-            e_ef = m;
-
-        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
-        v_cut = (vi_e + vi_d - vf_e) * (vi_e + vi_d - vf_e) - M2;
-
-        xs_elastic_sin[i] = ElasticXS_Sin_ed(theta_e) * mkb;
-        xs_born_sin[i] = BornXS_Sin_ed(theta_e) * mkb;
-
-        double sigma_born = xs_born_sin[i] / sinth;
-        double sigma_elastic = xs_elastic_sin[i] / sinth;
-
-        e_ef = e_elastic;
-        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
-        double q2 = -(vi_e - vf_e) * (vi_e - vf_e);
-        //std::cout<<theta_e * 180.0 / pi<<" "<<q2<<" "<<sigma_born<<" "<<sigma_elastic<<" "<<sigma_elastic / sigma_born<<std::endl;
-        //printf("%8.6lf %10.4le %10.4le %10.4le %8.6lf\n", theta_e * 180.0 / pi, q2, sigma_born, sigma_elastic, sigma_elastic / sigma_born);
-        fprintf(fp, "%8.6lf %12.6le %12.6le %12.6le %8.6lf\n", theta_e * 180.0 / pi, q2, sigma_born, sigma_elastic, sigma_elastic / sigma_born);
-    }
-
-    fclose(fp);
-
-    Interpolator_ElasticXS_Sin_ed.SetData(InterpolPoints, theta, xs_elastic_sin);
-    Interpolator_BornXS_Sin_ed.SetData(InterpolPoints, theta, xs_born_sin);
-
-    TFoam *FoamElastic = new TFoam("FoamElastic");
-    TFoamIntegrand *pFoamElastic = new ElasticIntegrand();
-    FoamElastic->SetkDim(1);
-    FoamElastic->SetnCells(1000); // Set number of cells
-    FoamElastic->SetnSampl(200); // Set number of samples
-    FoamElastic->SetOptRej(1); // Unweighted events in MC generation
-    FoamElastic->SetRho(pFoamElastic); // Set distribution function
-    FoamElastic->SetPseRan(PseRan); // Set random number generator
-    //FoamElastic->SetChat(1); // Set "chat level" in the standard output
-    FoamElastic->Initialize();
+//    for (int i = 0; i < InterpolPoints; i++) {
+//        theta_e = theta_min + i * (theta_max - theta_min) / (InterpolPoints - 1);
+//        theta[i] = theta_e;
+//        double sinth = Sin(theta_e);
+//
+//        double e_elastic = ElasticEnergy(theta_e);
+//        double e_ef = e_elastic - E_g_min;//maximal e_ef
+//        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
+//        v_min = (vi_e + vi_d - vf_e) * (vi_e + vi_d - vf_e) - M2;//maximal e_ef corresponds to minimal v
+//        v_min = 0.001;//fixed for now
+//
+//        if (E_g_max < e_elastic - m)
+//            e_ef = e_elastic - E_g_max;
+//        else
+//            e_ef = m;
+//
+//        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
+//        v_cut = (vi_e + vi_d - vf_e) * (vi_e + vi_d - vf_e) - M2;
+//
+//        xs_elastic_sin[i] = ElasticXS_Sin_ed(theta_e) * mkb;
+//        xs_born_sin[i] = BornXS_Sin_ed(theta_e) * mkb;
+//
+//        double sigma_born = xs_born_sin[i] / sinth;
+//        double sigma_elastic = xs_elastic_sin[i] / sinth;
+//
+//        e_ef = e_elastic;
+//        vf_e.SetPxPyPzE(Sqrt(Pow2(e_ef) - m2) * Sin(theta_e), 0, Sqrt(Pow2(e_ef) - m2) * Cos(theta_e), e_ef);
+//        double q2 = -(vi_e - vf_e) * (vi_e - vf_e);
+//        //std::cout<<theta_e * 180.0 / pi<<" "<<q2<<" "<<sigma_born<<" "<<sigma_elastic<<" "<<sigma_elastic / sigma_born<<std::endl;
+//        //printf("%8.6lf %10.4le %10.4le %10.4le %8.6lf\n", theta_e * 180.0 / pi, q2, sigma_born, sigma_elastic, sigma_elastic / sigma_born);
+//        fprintf(fp, "%8.6lf %12.6le %12.6le %12.6le %8.6lf\n", theta_e * 180.0 / pi, q2, sigma_born, sigma_elastic, sigma_elastic / sigma_born);
+//    }
+//
+//    fclose(fp);
+//
+//    Interpolator_ElasticXS_Sin_ed.SetData(InterpolPoints, theta, xs_elastic_sin);
+//    Interpolator_BornXS_Sin_ed.SetData(InterpolPoints, theta, xs_born_sin);
+//
+//    TFoam *FoamElastic = new TFoam("FoamElastic");
+//    TFoamIntegrand *pFoamElastic = new ElasticIntegrand();
+//    FoamElastic->SetkDim(1);
+//    FoamElastic->SetnCells(1000); // Set number of cells
+//    FoamElastic->SetnSampl(200); // Set number of samples
+//    FoamElastic->SetOptRej(1); // Unweighted events in MC generation
+//    FoamElastic->SetRho(pFoamElastic); // Set distribution function
+//    FoamElastic->SetPseRan(PseRan); // Set random number generator
+//    //FoamElastic->SetChat(1); // Set "chat level" in the standard output
+//    FoamElastic->Initialize();
 
     TFoam *FoamBrems = new TFoam("FoamBrems");
     TFoamIntegrand *pFoamBrems = new BremsIntegrand();
@@ -158,53 +130,54 @@ int main()
         FoamBrems->MakeEvent();
     }
 
-    double xsint_elastic = Interpolator_ElasticXS_Sin_ed.Integ(theta_min, theta_max);
-    double xsint_born = Interpolator_BornXS_Sin_ed.Integ(theta_min, theta_max);
+//    double xsint_elastic = Interpolator_ElasticXS_Sin_ed.Integ(theta_min, theta_max);
+//    double xsint_born = Interpolator_BornXS_Sin_ed.Integ(theta_min, theta_max);
     double xsint_brems, xsint_brems_error;
     FoamBrems->GetIntegMC(xsint_brems, xsint_brems_error);
 
-    double xsint = xsint_elastic + xsint_brems;
+    //double xsint = xsint_elastic + xsint_brems;
+    double xsint = xsint_brems;
     double xsint_error = xsint_brems_error;
 
-    int n_elastic = int(N * (xsint_elastic / xsint));
+    int n_elastic = 0;//int(N * (xsint_elastic / xsint));
 
 
 
 
-    fp = fopen(filename, "w");
+    FILE * fp = fopen(argv[6], "w");
 
     int count_elastic = 0, count_brems = 0;
 
     for (int i = 0; i < N; ++i) {
         if (i % 10000 == 0 && i != 0) std::cout << i << std::endl;
 
-        if ((n_elastic - count_elastic) > 0 && PseRan->Rndm() < 1.0 * (n_elastic - count_elastic) / (N - i)) {
-            FoamElastic->MakeEvent();
-
-            Ef_e = ElasticEnergy(theta_e);
-
-            vf_e.SetPxPyPzE(Sqrt(Pow2(Ef_e) - m2) * Sin(theta_e), 0.0, Sqrt(Pow2(Ef_e) - m2) * Cos(theta_e), Ef_e);
-            vf_d = vi_e + vi_d - vf_e;
-
-            double phi = 2.0 * pi * PseRan->Rndm();
-
-            vf_e.RotateZ(phi);
-            vf_d.RotateZ(phi);
-
-            Ef_e = vf_e.E();
-            theta_e = vf_e.Theta();
-            phi_e = vf_e.Phi();
-
-            Ef_d = vf_d.E();
-            theta_d = vf_d.Theta();
-            phi_d = vf_d.Phi();
-
-            E_g = 0.0;
-            theta_g = 0.0;
-            phi_g = 0.0;
-
-            count_elastic++;
-        } else {
+//        if ((n_elastic - count_elastic) > 0 && PseRan->Rndm() < 1.0 * (n_elastic - count_elastic) / (N - i)) {
+//            FoamElastic->MakeEvent();
+//
+//            Ef_e = ElasticEnergy(theta_e);
+//
+//            vf_e.SetPxPyPzE(Sqrt(Pow2(Ef_e) - m2) * Sin(theta_e), 0.0, Sqrt(Pow2(Ef_e) - m2) * Cos(theta_e), Ef_e);
+//            vf_d = vi_e + vi_d - vf_e;
+//
+//            double phi = 2.0 * pi * PseRan->Rndm();
+//
+//            vf_e.RotateZ(phi);
+//            vf_d.RotateZ(phi);
+//
+//            Ef_e = vf_e.E();
+//            theta_e = vf_e.Theta();
+//            phi_e = vf_e.Phi();
+//
+//            Ef_d = vf_d.E();
+//            theta_d = vf_d.Theta();
+//            phi_d = vf_d.Phi();
+//
+//            E_g = 0.0;
+//            theta_g = 0.0;
+//            phi_g = 0.0;
+//
+//            count_elastic++;
+//        } else {
             FoamBrems->MakeEvent();
 
             double phi = 2.0 * pi * PseRan->Rndm();
@@ -226,48 +199,27 @@ int main()
             phi_g = v_g.Phi();
 
             count_brems++;
-        }
+//        }
 
-        fprintf(fp, "%11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf\n", Ef_e * 1000, theta_e, phi_e, Ef_d * 1000, theta_d, phi_d, E_g * 1000, theta_g, phi_g);
+        fprintf(fp, "%11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf\n", Ef_e , theta_e, phi_e, Ef_d , theta_d, phi_d, E_g , theta_g, phi_g);
         //printf("%11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf %11.5lf %10.8lf %11.8lf\n", Ef_e * 1000, theta_e, phi_e, Ef_d * 1000, theta_d, phi_d, E_g * 1000, theta_g, phi_g);
     }
 
     fclose(fp);
 
-    fp = fopen(ifilename, "w");
+    fp = fopen(argv[7], "w");
 
-    fprintf(fp, "beam energy:\n");
-    fprintf(fp, "%lf MeV\n", Ei_e * 1000);
-    fprintf(fp, "polar angle range:\n");
-    fprintf(fp, "%lf ~ %lf deg\n", theta_min / deg, theta_max / deg);
-    fprintf(fp, "photon energy range:\n");
-    fprintf(fp, "%lf ~ %lf MeV\n", E_g_min * 1000, E_g_cut * 1000);
-    fprintf(fp, "angle acceptance (the solid angle):\n");
-    fprintf(fp, "%lf steradian\n", omega);
-    fprintf(fp, "cross section (averaged over the solid angle):\n");
-    fprintf(fp, "%lf microbarn / steradian\n", xsint / omega);
-    fprintf(fp, "Born cross section (averaged over the solid angle):\n");
-    fprintf(fp, "%lf microbarn / steradian\n", xsint_born / omega);
-    fprintf(fp, "integrated luminosity:\n");
-    fprintf(fp, "%lf inverse microbarn\n", N / xsint);
+    fprintf(fp, "[\n  {\n    \"beam energy\":%lf,\n     ", Ei_e);
+    fprintf(fp, "\"polar angle min\":%lf,\n     ", theta_min/deg);
+    fprintf(fp, "\"polar angle max\":%lf,\n     ", theta_max/deg);
+    fprintf(fp, "\"polar energy min\":%lf,\n     ", E_g_min);
+    fprintf(fp, "\"polar energy max\":%lf,\n     ", E_g_max);
+    fprintf(fp, "\"angle acceptance\":%lf,\n     ", omega);
+    fprintf(fp, "\"total cross section\":%lf\n  }\n]", xsint);
 
-    std::cout << xsint_born << " " << xsint  << " " << xsint_elastic << " "  << xsint_brems << " " << std::endl;
-    std::cout <<"Ratio:"<<(xsint/xsint_born)-1.0<<std::endl;
+//    std::cout << xsint_born << " " << xsint  << " " << xsint_elastic << " "  << xsint_brems << " " << std::endl;
+//    std::cout <<"Ratio:"<<(xsint/xsint_born)-1.0<<std::endl;
 
-    printf("beam energy:\n");
-    printf("%lf MeV\n", Ei_e * 1000);
-    printf("polar angle range:\n");
-    printf("%lf ~ %lf deg\n", theta_min / deg, theta_max / deg);
-    printf("photon energy range:\n");
-    printf("%lf ~ %lf MeV\n", E_g_min * 1000, E_g_cut * 1000);
-    printf("angle acceptance (the solid angle):\n");
-    printf("%lf steradian\n", omega);
-    printf("cross section (averaged over the solid angle):\n");
-    printf("%lf microbarn / steradian\n", xsint / omega);
-    printf("Born cross section (averaged over the solid angle):\n");
-    printf("%lf microbarn / steradian\n", xsint_born / omega);
-    printf("integrated luminosity:\n");
-    printf("%lf inverse microbarn\n", N / xsint);
 
     fclose(fp);
 }
