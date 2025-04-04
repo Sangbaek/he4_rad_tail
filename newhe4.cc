@@ -209,13 +209,13 @@ int main(int argc, char ** argv)
 
     fp = fopen(argv[7], "w");
 
-    fprintf(fp, "[\n  {\n    \"beam energy\":%lf,\n     ", Ei_e);
+    fprintf(fp, "{\n    \"beam energy\":%lf,\n     ", Ei_e);
     fprintf(fp, "\"polar angle min\":%lf,\n     ", theta_min/deg);
     fprintf(fp, "\"polar angle max\":%lf,\n     ", theta_max/deg);
     fprintf(fp, "\"polar energy min\":%lf,\n     ", E_g_min);
     fprintf(fp, "\"polar energy max\":%lf,\n     ", E_g_max);
     fprintf(fp, "\"angle acceptance\":%lf,\n     ", omega);
-    fprintf(fp, "\"total cross section\":%lf\n  }\n]", xsint);
+    fprintf(fp, "\"total cross section\":%lf\n}", xsint);
 
 //    std::cout << xsint_born << " " << xsint  << " " << xsint_elastic << " "  << xsint_brems << " " << std::endl;
 //    std::cout <<"Ratio:"<<(xsint/xsint_born)-1.0<<std::endl;
