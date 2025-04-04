@@ -73,8 +73,8 @@ const double GeVtofm = 25.68189504;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-const char *filename = "elastic_ed.dat";
-const char *ifilename = "elastic_ed.info";
+const char *filename = "elastic_ehe4.dat";
+const char *ifilename = "elastic_ehe4.json";
 
 int Use_TPE;
 
@@ -90,7 +90,7 @@ TLorentzVector vf_e, vf_d;
 
 double omega;
 
-double E_g_min, E_g_cut;
+double E_g_min, E_g_max;
 double v_min, v_cut;
 
 double E_g, theta_g, phi_g;
@@ -177,7 +177,7 @@ double He4_Fc(double abst)
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 double A(double QQ) // Structure function A
 {
-  return He4_Fc(QQ);
+  return He4_Fc(QQ) * He4_Fc(QQ);
 }
 
 double B(double QQ) // Structure function B
@@ -755,7 +755,7 @@ public:
     Double_t Density(int nDim, Double_t *arg)
     {
         theta_e = theta_min + arg[0] * (theta_max - theta_min);
-        E_g = E_g_min + arg[1] * (E_g_cut - E_g_min);
+        E_g = E_g_min + arg[1] * (E_g_max - E_g_min);
         theta_g = arg[2] * pi;
         phi_g = arg[3] * 2.0 * pi;
 
@@ -794,7 +794,7 @@ public:
 
         double xs = matrix * (1.0 / (1024.0 * Pow5(pi) * Sqrt(Pow2(Ei_e) - m2) * M)) * E_g * ((Pow2(Ef_e) - m2) / Abs(A * Ef_e - B * Sqrt(Pow2(Ef_e) - m2)));
 
-        return (theta_max - theta_min) * (E_g_cut - E_g_min) * pi * (2.0 * pi) * (2.0 * pi) * xs * Sin(theta_e) * Sin(theta_g) * mkb;
+        return (theta_max - theta_min) * (E_g_max - E_g_min) * pi * (2.0 * pi) * (2.0 * pi) * xs * Sin(theta_e) * Sin(theta_g) * mkb;
     }
 };
 
